@@ -42,7 +42,14 @@ async function run() {
             res.json(result);
         });
 
-        app.get("/destination/:id", async (req, res) => {
+        app.get("/destination/:id",(req, res, next) => {
+          const header = req.headers.authorization
+          if(header === "logged in"){
+            next()
+          }else{
+            res.status(401).json({message: "You are not logged in"})
+          }
+        }async (req, res) => {
             const { id } = req.params;
             const result = await destinationCollection.findOne({
                 _id: new ObjectId(id)
@@ -70,7 +77,7 @@ async function run() {
 
         app.get("/booking/:userId", async (req, res) => {
             const { userId } = req.params;
-            const result = await bookingCollection.find({ userId: userId });
+            const result = await bookingCollection.find({ userId: userId }).toArray();
             res.json(result);
         });
 
@@ -79,6 +86,12 @@ async function run() {
             const result = await bookingCollection.insertOne(bookingData);
             res.json(result);
         });
+        
+        app.delete("/booking/:bookingId", async(req, res) => {
+          const {bookingId} = req.params; 
+          const result = bookingCollection.deleteOne({_id: new ObjectId(bookingId)})
+          res.json(result)
+        })
 
         await client.db("admin").command({ ping: 1 });
         console.log(
